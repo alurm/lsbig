@@ -1,0 +1,51 @@
+#!/bin/sh
+# Copyright © 2024 Alan Urmancheev <alan.urman@gmail.com>
+#
+# Permission to use, copy, modify, and distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+# Show files names bigger than two mebibytes in the current directory or at the path optionally given.
+# Doesn't handle file names with newlines in them.
+
+if test "$#" = 1; then
+	cd "$1" || exit 1
+fi
+
+minimum=2
+
+# https://www.etalabs.net/sh_tricks.html, "Using globs to match dotfiles".
+GLOB='.[!.]* ..?* *'
+IFS='
+'
+
+set -- $(
+	IFS=' '
+	for path in $GLOB; do
+		test -e "$path" && printf '%s\n' "$path"
+	done
+)
+
+(
+	du -sk "$@" | sort -rn | awk '{
+		split("K M G T P", exponents)
+		significand = $1
+		i = 1
+		while (significand >= 1024 && i < length(exponents)) {
+			significand /= 1024
+			i++
+		}
+		if ($1 >= '$minimum' * 1024) {
+			$1 = sprintf("%6.1f%s ", significand, exponents[i])
+			print $0
+		}
+	}'
+) 2> /dev/null
