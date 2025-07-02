@@ -14,14 +14,20 @@ if test "$#" = 1; then
 	esac || exit 1
 fi
 
+# The minimal size (in megabytes) for a path to be included in the listing.
 minimum=2
 
+# Match all files in the directory.
 # https://www.etalabs.net/sh_tricks.html, "Using globs to match dotfiles".
 GLOB='.[!.]* ..?* *'
+
 IFS='
 '
 
+# Only keep existing files to avoid adding globs which failed to match.
+# shellcheck disable=SC2046 # Word splitting.
 set -- $(
+	# The glob itself should be split by spaces.
 	IFS=' '
 	for path in $GLOB; do
 		test -e "$path" && printf '%s\n' "$path"
