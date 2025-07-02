@@ -4,15 +4,23 @@
   outputs = {nixpkgs, flake-utils, ...}: flake-utils.lib.eachDefaultSystem (system: let
     pkgs = nixpkgs.legacyPackages.${system};
   in {
-    packages.default = pkgs.writeShellApplication {
+    packages.default = pkgs.stdenv.mkDerivation {
       name = "lsbig";
-      runtimeInputs = with pkgs; [
-        # For test, printf, du, sort.
-        coreutils
-        # For awk.
-        gawk
+      src = ./.;
+      nativeBuildInputs = with pkgs; [
+        makeWrapper
+        installShellFiles
+        scdoc
       ];
-      text = builtins.readFile ./lsbig;
+      installPhase = ''
+        installBin lsbig
+        scdoc < lsbig.1.scd > lsbig.1
+        installManPage lsbig.1
+        wrapProgram $out/bin/lsbig --prefix PATH : ${pkgs.lib.makeBinPath (with pkgs; [
+          coreutils
+          gawk
+        ])}
+      '';
     };
   });
 }
