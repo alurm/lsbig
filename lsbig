@@ -3,7 +3,15 @@
 # Doesn't handle file names with newlines in them.
 
 if test "$#" = 1; then
-	cd "$1" || exit 1
+	# Escape cd's flags.
+	case "$1" in
+	/*)
+		cd "$1"
+	;;
+	*)
+		cd "./$1"
+	;;
+	esac || exit 1
 fi
 
 minimum=2
